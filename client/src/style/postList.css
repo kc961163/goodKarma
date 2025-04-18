@@ -1,0 +1,315 @@
+ /* /src/style/postList.css */
+
+ /* The container for the entire post list section */
+.post-list {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  width: 600px;
+  margin: 2rem auto;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* The form for creating a new post */
+.post-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.post-form label {
+  font-weight: bold;
+  margin-bottom: 0.2rem;
+  display: inline-block;
+}
+
+.post-form input[type="text"],
+.post-form textarea {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.post-form button {
+  align-self: end;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  border-radius: 0.3rem;
+  background-color: #eee;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.post-form button:hover {
+  background-color: #ccc;
+}
+
+/* The list of posts */
+.post-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Each post item in the list 
+   - By default, it has 3 columns: title, content, and actions 
+*/
+.post-item {
+  padding: 1rem 0;
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 1rem;
+  align-items: flex-start;
+  border-bottom: 1px solid #ccc;
+}
+
+/* The title of the post */
+.itemName {
+  font-weight: bold;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+/* The content of the post */
+.itemContent {
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+/* 
+  The default actions column (Edit, Delete) 
+  We put them in a .actions div 
+*/
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.actions button {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 0.3rem;
+  background-color: #f4f4f4;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.actions button:hover {
+  background-color: #ddd;
+  transform: scale(1.05);
+}
+
+/* Additional styles for the edit form that replaces a post item */
+.edit-form {
+  grid-column: 1 / span 3; /* Make the edit form span all 3 columns */
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+}
+
+.edit-form label {
+  font-weight: bold;
+}
+
+.edit-form input[type="text"],
+.edit-form textarea {
+  width: 100%;
+  padding: 0.4rem;
+  font-size: 1rem;
+}
+
+.edit-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-self: end;
+}
+
+.edit-buttons button {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 0.3rem;
+  background-color: #f4f4f4;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.edit-buttons button:hover {
+  background-color: #ddd;
+  transform: scale(1.05);
+}
+
+/* The detail view styling (if used on the same page or a detail page) */
+.post-detail {
+  background: white;
+  padding: 2rem;
+  margin-top: 2rem;
+  border-radius: 0.5rem;
+  width: 600px;
+  margin: 2rem auto;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.post-detail h2 {
+  margin-top: 0;
+}
+
+.post-detail p {
+  line-height: 1.5;
+}
+
+.post-detail small {
+  display: block;
+  margin-top: 1rem;
+  color: #777;
+}
+
+/* Feed-specific styles */
+.feed-item {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.feed-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.post-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+}
+
+.post-meta {
+  display: flex;
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.author {
+  font-weight: bold;
+}
+
+.own-post-indicator {
+  background-color: #e3f2fd;
+  color: #2196f3;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.action-btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  margin-right: 0.5rem;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.action-btn.view {
+  background-color: #2196f3;
+  color: white;
+}
+
+.action-btn.edit {
+  background-color: #ff9800;
+  color: white;
+}
+
+.action-btn:hover {
+  transform: scale(1.05);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  gap: 1rem;
+}
+
+.page-btn {
+  padding: 0.5rem 1rem;
+  background-color: #f4f4f4;
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  background-color: #f5f5f5;
+  border-radius: 0.5rem;
+  margin: 2rem 0;
+}
+
+/* FeedDetail styles */
+.post-meta-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  color: #777;
+  font-size: 0.9rem;
+}
+
+.post-content-detail {
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.post-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.action-link {
+  padding: 0.5rem 1rem;
+  border-radius: 0.3rem;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.action-link.back {
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+.action-link.edit {
+  background-color: #ff9800;
+  color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .post-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .post-actions {
+    flex-direction: column;
+  }
+}
