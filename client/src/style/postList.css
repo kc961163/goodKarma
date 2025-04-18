@@ -1,15 +1,14 @@
  /* /src/style/postList.css */
 
  /* The container for the entire post list section */
-.post-list {
-  background: white;
+ .post-list {
+  background: var(--card-background);
   padding: 2rem;
-  border-radius: 1rem;
-  width: 600px;
+  border-radius: var(--border-radius);
+  max-width: var(--content-width);
   margin: 2rem auto;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--box-shadow);
 }
-
 /* The form for creating a new post */
 .post-form {
   display: grid;

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { fetchGetWithAuth } from "../security/fetchWithAuth";
+import { useNavigate } from "react-router-dom";
 
 import "../style/postList.css";
 
@@ -9,6 +10,7 @@ export default function PostDetail() {
   const { postId } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchPost() {
@@ -44,9 +46,28 @@ export default function PostDetail() {
       ) : (
         <p style={{ fontStyle: "italic" }}>No content provided.</p>
       )}
+      
       {/* Example: If you want to show timestamps */}
-      <small>Created at: {new Date(post.createdAt).toLocaleString()}</small>
-      <small> | Updated at: {new Date(post.updatedAt).toLocaleString()}</small>
+      <div className="post-meta">
+        <small>Created at: {new Date(post.createdAt).toLocaleString()}</small>
+        <small> | Updated at: {new Date(post.updatedAt).toLocaleString()}</small>
+      </div>
+      
+      {/* Add action buttons */}
+      <div className="post-actions">
+        <button 
+          className="btn-primary"
+          onClick={() => navigate(`/app/posts/${postId}/edit`)}
+        >
+          Edit Post
+        </button>
+        <button 
+          className="btn-secondary"
+          onClick={() => navigate('/app/posts')}
+        >
+          Back to Posts
+        </button>
+      </div>
     </div>
   );
 }

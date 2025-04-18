@@ -17,6 +17,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import NotFound from "./components/NotFound";
 import Home from "./components/Home";
+import EditPost from "./components/EditPost";
 
 import { AuthProvider } from "./security/AuthContext";
 import RequireAuth from "./security/RequireAuth";
@@ -47,9 +48,10 @@ root.render(
         >
           <Route path="feed" element={<Feed />} />
           <Route path="feed/:postId" element={<FeedDetail />} />
-          <Route index element={<Profile />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="posts" element={<Posts />} />
           <Route path="posts/:postId" element={<PostDetail />} />
+          <Route path="posts/:postId/edit" element={<EditPost />} />
         </Route>
 
         {/* Catch-all Route */}

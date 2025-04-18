@@ -35,9 +35,9 @@
   
   .auth-form input[type="submit"] {
     padding: 0.7rem;
-    background-color: coral;
+    background-color: var(--primary-color);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     color: white;
     font-size: 1rem;
     cursor: pointer;
@@ -45,5 +45,5 @@
   }
   
   .auth-form input[type="submit"]:hover {
-    background-color: darkorange;
+    background-color: var(--primary-dark);
   }

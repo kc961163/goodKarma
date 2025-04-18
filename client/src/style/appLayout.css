@@ -1,52 +1,121 @@
 /* src/style/appLayout.css */
 
 .app {
-  margin: 5px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .title {
-  font-size: 12px;
-  border: 1px solid rgb(0, 255, 179);
+  background-color: var(--primary-dark);
+  color: white;
+  padding: 1rem 0;
   text-align: center;
 }
 
-.header {
-  width: 100%;
-  border: 1px solid orange;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  margin: 5px 0;
+.title h1 {
+  margin: 0;
+  font-size: 1.8rem;
 }
 
-.content {
+.header {
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 2rem;
+}
+
+.menu {
   width: 100%;
-  border: 1px solid lightskyblue;
-  margin-top: 5px;
 }
 
 .menu-list {
   list-style: none;
   display: flex;
-  justify-content: space-evenly;
+  margin: 0;
   padding: 0;
 }
 
 .menu-list li {
-  margin-right: 8px;
+  margin-right: 1.5rem;
+}
+
+.menu-list a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 0.5rem 0;
+  display: inline-block;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.menu-list a:hover {
+  border-color: white;
 }
 
 .exit-button {
-  background-color: lightcoral;
+  background-color: transparent;
+  color: white;
+  border: 1px solid white;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.exit-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.content {
+  flex: 1;
+  padding: 1rem;
 }
 
 .loading {
   display: flex;
   align-items: center;
-  justify-content: space-around;
-  background-color: lightcoral;
-  color: aliceblue;
+  justify-content: center;
+  background-color: var(--primary-light);
+  color: white;
   height: 100%;
-  font-size: 36px;
+  padding: 2rem;
+  font-size: 1.5rem;
+  border-radius: var(--border-radius);
+}
+
+/* Active navigation link styling */
+.active-link {
+  color: white;
+  font-weight: bold;
+  border-bottom: 2px solid white;
+  /* You can also add a background color or other styles */
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: var(--border-radius);
+}
+
+/* Keep your existing hover styles */
+.menu-list a:hover {
+  border-color: white;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    padding: 0.5rem;
+  }
+  
+  .menu-list {
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  
+  .menu-list li {
+    margin: 0 0.75rem;
+  }
 }

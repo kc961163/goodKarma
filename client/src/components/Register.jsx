@@ -16,7 +16,7 @@ export default function Register() {
     e.preventDefault();
     await register(email, password, name);
     // Redirect to posts page after registration
-    navigate("/app/posts");
+    navigate("/app/feed");
   };
 
   return (

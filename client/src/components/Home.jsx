@@ -19,7 +19,7 @@ export default function Home() {
             Login
           </button>
         ) : (
-          <button className="btn-primary" onClick={() => navigate("/app/posts")}>
+          <button className="btn-primary" onClick={() => navigate("/app/feed")}>
             Enter App
           </button>
         )}

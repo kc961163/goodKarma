@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-
+  
     if (res.ok) {
       const userData = await res.json();
       setIsAuthenticated(true);
@@ -49,6 +49,15 @@ export function AuthProvider({ children }) {
     } else {
       setIsAuthenticated(false);
       setUser(null);
+      // Extract the error message from the response if available
+      let errorMessage;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || "Authentication failed";
+      } catch {
+        errorMessage = "Authentication failed";
+      }
+      throw new Error(errorMessage);
     }
   };
 
