@@ -26,52 +26,65 @@ export default function Feed() {
       ) : (
         <>
           <ul className="list">
-            {feed.map((post) => (
-              <li key={post.id} className="post-item feed-item">
-                {/* Link wraps the entire post item, making it clickable */}
-                <Link to={`/app/feed/${post.id}`} className="post-link">
-                  <div className="post-content">
-                    <span className="itemName">{post.title}</span>
-                    <span className="itemContent">
-                      {post.content ? (
-                        <p>{post.content.substring(0, 100)}
-                          {post.content.length > 100 ? "..." : ""}
-                        </p>
-                      ) : (
-                        <p className="no-content">No content provided.</p>
-                      )}
-                    </span>
-                    
-                    {/* Post metadata */}
-                    <div className="post-meta">
-                      <span className="author">
-                        By: {post.user.name || post.user.email}
-                      </span>
-                      <span className="date">
-                        {new Date(post.createdAt).toLocaleDateString()}
-                      </span>
-                      
-                      {/* Visual indicator for user's own posts */}
-                      {post.user.id === user.id && (
-                        <span className="own-post-indicator">Your post</span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-                
-                {/* Action buttons only for user's own posts */}
-                {post.user.id === user.id && (
-                  <div className="actions">
-                    <Link to={`/app/posts/${post.id}`} className="action-btn view">
-                      View
-                    </Link>
-                    <Link to={`/app/posts/${post.id}/edit`} className="action-btn edit">
-                      Edit
-                    </Link>
-                  </div>
-                )}
-              </li>
-            ))}
+          {feed.map((post) => (
+  <li key={post.id} className="post-item feed-item">
+    <Link to={`/app/feed/${post.id}`} className="post-link">
+      <div className="post-content">
+        <span className="itemName">{post.title}</span>
+        <span className="itemContent">
+          {post.content ? (
+            <p>
+              {post.content.substring(0, 100)}
+              {post.content.length > 100 ? "..." : ""}
+            </p>
+          ) : (
+            <p className="no-content">No content provided.</p>
+          )}
+        </span>
+      </div>
+    </Link>
+    
+    {/* Post metadata */}
+    <div className="post-meta">
+      <span className="author">
+        By: {post.user.name || post.user.email}
+      </span>
+      <span className="date">
+        {new Date(post.createdAt).toLocaleDateString()}
+      </span>
+      
+      {/* Visual indicator for user's own posts */}
+      {post.user.id === user.id && (
+        <span className="own-post-indicator">Your post</span>
+      )}
+    </div>
+    
+    {/* Action buttons */}
+    <div className="actions">
+      <Link to={`/app/feed/${post.id}`} className="action-btn view">
+        View
+      </Link>
+      
+      {post.user.id === user.id && (
+        <Link to={`/app/posts/${post.id}/edit`} className="action-btn edit">
+          Edit
+        </Link>
+      )}
+    </div>
+    
+    {/* Placeholder for future social features */}
+    <div className="social-actions">
+      <span className="action-placeholder">
+        {/* You can add icon here later */}
+        0 likes
+      </span>
+      <span className="action-placeholder">
+        {/* You can add icon here later */}
+        0 comments
+      </span>
+    </div>
+  </li>
+))}
           </ul>
 
           {/* Pagination controls */}

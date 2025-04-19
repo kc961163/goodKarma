@@ -44,6 +44,13 @@ body,
   --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   --content-width: 800px;
   --header-height: 60px;
+
+  /* New spacing variables for consistency */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
 }
 
 body {

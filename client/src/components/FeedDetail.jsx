@@ -65,17 +65,31 @@ export default function FeedDetail() {
         )}
       </div>
       
+      {/* Placeholder for future social features */}
+      <div className="social-actions detail">
+        <span className="action-placeholder">
+          0 likes
+        </span>
+        <span className="action-placeholder">
+          0 comments
+        </span>
+      </div>
+      
+      {/* Comments section placeholder */}
+      <div className="comments-section">
+        <h3>Comments</h3>
+        <p className="placeholder-text">Comments will appear here in the future.</p>
+      </div>
+      
       <div className="post-actions">
         <Link to="/app/feed" className="action-link back">
           Back to Feed
         </Link>
         
         {isOwnPost && (
-          <>
-            <Link to={`/app/posts/${post.id}`} className="action-link edit">
-              Edit Post
-            </Link>
-          </>
+          <Link to={`/app/posts/${post.id}/edit`} className="action-link edit">
+            Edit Post
+          </Link>
         )}
       </div>
     </div>
