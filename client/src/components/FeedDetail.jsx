@@ -3,8 +3,10 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuthUser } from "../security/AuthContext";
 import { fetchGetWithAuth } from "../security/fetchWithAuth";
+import { extractDeedMetadata, getCleanContent, getFullDeedInfo } from "../utils/deedUtils";
 
-import "../style/postList.css"; // Reusing your existing CSS
+import "../style/postList.css";
+import "../style/goodDeeds.css";
 
 export default function FeedDetail() {
   const { postId } = useParams();
@@ -30,20 +32,47 @@ export default function FeedDetail() {
   }, [postId]);
 
   if (loading) {
-    return <div>Loading post details...</div>;
+    return <div className="loading-container">Loading post details...</div>;
   }
 
   if (!post) {
-    return <div>Post not found or an error occurred.</div>;
+    return <div className="error-message">Post not found or an error occurred.</div>;
   }
 
+  // Get deed information if available
+  const metadata = extractDeedMetadata(post.content);
+  const deedInfo = metadata ? getFullDeedInfo(metadata) : null;
+  const cleanContent = getCleanContent(post.content);
   const isOwnPost = post.user.id === user.id;
 
   return (
     <div className="post-detail">
-      <h2>{post.title}</h2>
+      {/* <h2>{post.title}</h2> */}
       
       <div className="post-meta-detail">
+        {deedInfo && (
+          <div className="deed-details">
+            <div className="deed-badge" style={{ backgroundColor: deedInfo.color }}>
+              <span className="deed-icon">{deedInfo.icon}</span>
+              <span className="deed-name">{deedInfo.name}</span>
+            </div>
+            
+            <div className="deed-options">
+              {deedInfo.primaryName && deedInfo.primaryLabel && (
+                <span className="deed-option">
+                  <strong>{deedInfo.primaryName}:</strong> {deedInfo.primaryLabel}
+                </span>
+              )}
+              
+              {deedInfo.secondaryName && deedInfo.secondaryLabel && (
+                <span className="deed-option">
+                  <strong>{deedInfo.secondaryName}:</strong> {deedInfo.secondaryLabel}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        
         <span className="author">
           By: {post.user.name || post.user.email}
         </span>
@@ -58,8 +87,8 @@ export default function FeedDetail() {
       </div>
       
       <div className="post-content-detail">
-        {post.content ? (
-          <p>{post.content}</p>
+        {cleanContent ? (
+          <p>{cleanContent}</p>
         ) : (
           <p className="no-content">No content provided.</p>
         )}
