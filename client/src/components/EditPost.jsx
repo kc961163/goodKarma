@@ -1,9 +1,10 @@
 // /src/components/EditPost.jsx
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchGetWithAuth } from "../security/fetchWithAuth";
 import usePostsCrud from "../hooks/usePostsCrud";
-import "../style/postForm.css"; // We'll create this shared CSS file
+import "../style/postForm.css";
 
 export default function EditPost() {
   const { postId } = useParams();

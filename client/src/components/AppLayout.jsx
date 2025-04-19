@@ -22,10 +22,10 @@ export default function AppLayout() {
       <NavLink to="/app/feed" className={({ isActive }) => isActive ? "active-link" : ""}>Feed</NavLink>
     </li>
     <li>
-      <NavLink to="/app/profile" className={({ isActive }) => isActive ? "active-link" : ""}>Profile</NavLink>
+      <NavLink to="/app/posts" className={({ isActive }) => isActive ? "active-link" : ""}>My Posts</NavLink>
     </li>
     <li>
-      <NavLink to="/app/posts" className={({ isActive }) => isActive ? "active-link" : ""}>Posts</NavLink>
+      <NavLink to="/app/profile" className={({ isActive }) => isActive ? "active-link" : ""}>Profile</NavLink>
     </li>
     <li>
       <button

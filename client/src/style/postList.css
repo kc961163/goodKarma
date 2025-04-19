@@ -1,7 +1,7 @@
- /* /src/style/postList.css */
+/* src/style/postList.css */
 
- /* The container for the entire post list section */
- .post-list {
+/* The container for the entire post list section */
+.post-list {
   background: var(--card-background);
   padding: 2rem;
   border-radius: var(--border-radius);
@@ -9,12 +9,19 @@
   margin: 2rem auto;
   box-shadow: var(--box-shadow);
 }
+
 /* The form for creating a new post */
 .post-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
   margin-bottom: 2rem;
+}
+
+.post-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .post-form label {
@@ -26,23 +33,16 @@
 .post-form input[type="text"],
 .post-form textarea {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.75rem;
   font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
 }
 
-.post-form button {
-  align-self: end;
-  padding: 0.6rem 1rem;
-  font-size: 1rem;
-  border-radius: 0.3rem;
-  background-color: #eee;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.post-form button:hover {
-  background-color: #ccc;
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 /* The list of posts */
@@ -52,9 +52,7 @@
   padding: 0;
 }
 
-/* Each post item in the list 
-   - By default, it has 3 columns: title, content, and actions 
-*/
+/* Each post item in the list */
 .post-item {
   padding: 1.25rem;
   margin-bottom: 1rem;
@@ -65,6 +63,12 @@
   box-shadow: var(--box-shadow);
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   border-left: 4px solid var(--primary-color);
+  cursor: pointer;
+}
+
+.post-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Post content container */
@@ -108,7 +112,7 @@
   gap: 0.5rem;
 }
 
-/* Smaller action buttons */
+/* Unified action buttons */
 .action-btn, .action-link {
   padding: 0.4rem 0.8rem;
   font-size: 0.85rem;
@@ -123,56 +127,77 @@
   font-weight: normal;
 }
 
-.action-btn.view {
+.action-btn:hover, .action-link:hover {
+  transform: scale(1.05);
+}
+
+/* Button colors - unified using CSS variables */
+.action-btn.view, .action-link.view {
   background-color: var(--primary-color);
   color: white;
 }
 
-.action-btn.edit {
+.action-btn.edit, .action-link.edit {
   background-color: var(--secondary-color);
   color: white;
 }
 
-
-/* Additional styles for the edit form that replaces a post item */
-.edit-form {
-  grid-column: 1 / span 3; /* Make the edit form span all 3 columns */
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 1rem;
+.action-btn.delete {
+  background-color: var(--danger-color);
+  color: white;
 }
 
-.edit-form label {
+.action-btn.delete:hover {
+  background-color: #c9302c;
+}
+
+.action-link.back {
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+/* Post link styling */
+.post-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+}
+
+/* Author styling */
+.author {
   font-weight: bold;
 }
 
-.edit-form input[type="text"],
-.edit-form textarea {
-  width: 100%;
-  padding: 0.4rem;
-  font-size: 1rem;
+.own-post-indicator {
+  background-color: #e3f2fd;
+  color: #2196f3;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
 }
 
-.edit-buttons {
+/* Social actions styling */
+.social-actions {
+  margin-top: 0.75rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-self: end;
+  gap: 1rem;
 }
 
-.edit-buttons button {
-  padding: 0.3rem 0.6rem;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: 0.3rem;
-  background-color: #f4f4f4;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+.action-placeholder {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
-.edit-buttons button:hover {
-  background-color: #ddd;
-  transform: scale(1.05);
+/* Social actions for details page */
+.social-actions.detail {
+  padding: 0.75rem 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  margin: 1.5rem 0;
 }
 
 /* Comments section styling */
@@ -193,15 +218,7 @@
   color: var(--text-light);
 }
 
-/* Social actions styling for details page */
-.social-actions.detail {
-  padding: 0.75rem 0;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
-  margin: 1.5rem 0;
-}
-
-/* Update post-detail styling to match the card design */
+/* Detail view styling (common for both feed and posts) */
 .post-detail {
   background: var(--card-background);
   padding: 2rem;
@@ -214,103 +231,31 @@
 
 .post-detail h2 {
   margin-top: 0;
+  color: var(--primary-dark);
 }
 
-.post-detail p {
-  line-height: 1.5;
-}
-
-.post-detail small {
-  display: block;
-  margin-top: 1rem;
-  color: #777;
-}
-
-/* Feed-specific styles */
-.feed-item {
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  cursor: pointer;
-}
-
-.feed-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.post-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  width: 100%;
-}
-
-.post-meta {
+.post-meta-detail {
   display: flex;
-  font-size: 0.8rem;
-  color: #777;
-  margin-top: 0.5rem;
   flex-wrap: wrap;
   gap: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
-.author {
-  font-weight: bold;
+.post-content-detail {
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  color: var(--text-primary);
 }
 
-.own-post-indicator {
-  background-color: #e3f2fd;
-  color: #2196f3;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-}
-
-.action-btn {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, transform 0.2s;
-  font-weight: normal;
-  margin-right: 0.5rem;
-}
-
-.action-btn.view {
-  background-color: #2196f3;
-  color: white;
-}
-
-.action-btn.edit {
-  background-color: #ff9800;
-  color: white;
-}
-
-.action-btn:hover {
-  transform: scale(1.05);
-}
-
-
-/* Add space for future social actions */
-.social-actions {
-  margin-top: 0.75rem;
+.post-actions {
   display: flex;
   gap: 1rem;
+  margin-top: 2rem;
 }
 
-/* Style for the future like/comment placeholders */
-.action-placeholder {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
+/* Pagination */
 .pagination {
   display: flex;
   justify-content: center;
@@ -323,7 +268,7 @@
   padding: 0.5rem 1rem;
   background-color: #f4f4f4;
   border: none;
-  border-radius: 0.3rem;
+  border-radius: var(--border-radius);
   cursor: pointer;
 }
 
@@ -332,50 +277,30 @@
   cursor: not-allowed;
 }
 
+/* Empty state */
 .empty-state {
   text-align: center;
   padding: 2rem;
   background-color: #f5f5f5;
-  border-radius: 0.5rem;
+  border-radius: var(--border-radius);
   margin: 2rem 0;
 }
 
-/* FeedDetail styles */
-.post-meta-detail {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  color: #777;
-  font-size: 0.9rem;
+/* Loading container */
+.loading-container {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-style: italic;
 }
 
-.post-content-detail {
-  line-height: 1.6;
-  margin-bottom: 2rem;
-}
-
-.post-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.action-link {
-  padding: 0.5rem 1rem;
-  border-radius: 0.3rem;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.action-link.back {
-  background-color: #f4f4f4;
-  color: #333;
-}
-
-.action-link.edit {
-  background-color: #ff9800;
-  color: white;
+/* Error message */
+.error-message {
+  background-color: rgba(217, 83, 79, 0.1);
+  color: var(--danger-color);
+  padding: 0.75rem;
+  border-radius: var(--border-radius);
+  margin-bottom: 1rem;
 }
 
 /* Responsive adjustments */
@@ -386,6 +311,10 @@
   }
   
   .post-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions {
     flex-direction: column;
   }
 }

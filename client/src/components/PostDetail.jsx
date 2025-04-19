@@ -1,8 +1,8 @@
 // /src/components/PostDetail.jsx
+
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { fetchGetWithAuth } from "../security/fetchWithAuth";
-import { useNavigate } from "react-router-dom";
 
 import "../style/postList.css";
 
@@ -10,7 +10,6 @@ export default function PostDetail() {
   const { postId } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchPost() {
@@ -30,43 +29,60 @@ export default function PostDetail() {
   }, [postId]);
 
   if (loading) {
-    return <div>Loading post details...</div>;
+    return <div className="loading-container">Loading post details...</div>;
   }
 
   if (!post) {
-    return <div>Post not found or an error occurred.</div>;
+    return <div className="error-message">Post not found or an error occurred.</div>;
   }
 
-  // Now we clearly show the title and optional content
   return (
     <div className="post-detail">
       <h2>{post.title}</h2>
-      {post.content ? (
-        <p>{post.content}</p>
-      ) : (
-        <p style={{ fontStyle: "italic" }}>No content provided.</p>
-      )}
       
-      {/* Example: If you want to show timestamps */}
-      <div className="post-meta">
-        <small>Created at: {new Date(post.createdAt).toLocaleString()}</small>
-        <small> | Updated at: {new Date(post.updatedAt).toLocaleString()}</small>
+      <div className="post-meta-detail">
+        <span className="date">
+          Posted: {new Date(post.createdAt).toLocaleDateString()}
+        </span>
+        {post.createdAt !== post.updatedAt && (
+          <span className="edited">
+            (Updated: {new Date(post.updatedAt).toLocaleDateString()})
+          </span>
+        )}
       </div>
       
-      {/* Add action buttons */}
+      <div className="post-content-detail">
+        {post.content ? (
+          <p>{post.content}</p>
+        ) : (
+          <p className="no-content">No content provided.</p>
+        )}
+      </div>
+      
+      {/* Placeholder for future social features */}
+      <div className="social-actions detail">
+        <span className="action-placeholder">
+          0 likes
+        </span>
+        <span className="action-placeholder">
+          0 comments
+        </span>
+      </div>
+      
+      {/* Comments section placeholder */}
+      <div className="comments-section">
+        <h3>Comments</h3>
+        <p className="placeholder-text">Comments will appear here in the future.</p>
+      </div>
+      
       <div className="post-actions">
-        <button 
-          className="btn-primary"
-          onClick={() => navigate(`/app/posts/${postId}/edit`)}
-        >
-          Edit Post
-        </button>
-        <button 
-          className="btn-secondary"
-          onClick={() => navigate('/app/posts')}
-        >
+        <Link to="/app/posts" className="action-link back">
           Back to Posts
-        </button>
+        </Link>
+        
+        <Link to={`/app/posts/${postId}/edit`} className="action-link edit">
+          Edit Post
+        </Link>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import "../style/postList.css";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import usePostsCrud from "../hooks/usePostsCrud";
 
 export default function Posts() {
@@ -10,7 +11,6 @@ export default function Posts() {
     posts,
     loading,
     createPost,
-    updatePost,
     deletePost,
   } = usePostsCrud();
 
@@ -18,12 +18,7 @@ export default function Posts() {
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
 
-  // States for editing an existing post
-  const [editingId, setEditingId] = useState(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editContent, setEditContent] = useState("");
-
-  // If you prefer, you can rely on createPost from the hook:
+  // Handle post creation
   async function handleCreate(e) {
     e.preventDefault();
     if (!postTitle) return alert("Title is required.");
@@ -35,41 +30,23 @@ export default function Posts() {
     }
   }
 
-  // Initialize the edit form with existing post data
-  function handleEditInit(post) {
-    setEditingId(post.id);
-    setEditTitle(post.title);
-    setEditContent(post.content || "");
-  }
-
-  // Submit changes for a specific post
-  async function handleEditSubmit(e) {
-    e.preventDefault();
-    if (!editTitle) return alert("Title is required.");
-    await updatePost(editingId, editTitle, editContent);
-    setEditingId(null);
-    setEditTitle("");
-    setEditContent("");
-  }
-
-  // Cancel editing
-  function handleEditCancel() {
-    setEditingId(null);
-    setEditTitle("");
-    setEditContent("");
-  }
-
-  // Delete
+  // Handle post deletion
   async function handleDelete(id) {
-    await deletePost(id);
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      await deletePost(id);
+    }
   }
 
-  if (loading) return <p>Loading posts...</p>;
+  if (loading) return <p>Loading your posts...</p>;
 
   return (
     <div className="post-list">
+      <h1>My Posts</h1>
+      <p>Manage your good deeds and activities</p>
+
+      {/* Create Post Form */}
       <form onSubmit={handleCreate} className="post-form" autoComplete="off">
-        <div>
+        <div className="form-group">
           <label htmlFor="postTitle">Title (required)</label>
           <input
             type="text"
@@ -80,7 +57,7 @@ export default function Posts() {
           />
         </div>
 
-        <div>
+        <div className="form-group">
           <label htmlFor="postContent">Content (optional)</label>
           <textarea
             id="postContent"
@@ -91,63 +68,72 @@ export default function Posts() {
           />
         </div>
 
-        <button type="submit">+ Add Post</button>
+        <button type="submit" className="btn-primary">+ Add Post</button>
       </form>
 
-      <ul className="list">
-        {posts.map((post) => {
-          // If this is the post being edited, show the edit form
-          if (editingId === post.id) {
-            return (
-              <li key={post.id} className="post-item">
-                <form onSubmit={handleEditSubmit} className="edit-form">
-                  <div>
-                    <label>Title (required)</label>
-                    <input
-                      type="text"
-                      value={editTitle}
-                      onChange={(e) => setEditTitle(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label>Content (optional)</label>
-                    <textarea
-                      rows="3"
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                    />
-                  </div>
-                  <div className="edit-buttons">
-                    <button type="submit">Save</button>
-                    <button type="button" onClick={handleEditCancel}>
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </li>
-            );
-          }
-
-          // Otherwise, show the normal post display
-          return (
+      {posts.length === 0 ? (
+        <div className="empty-state">
+          <p>You haven't created any posts yet. Share your first activity!</p>
+        </div>
+      ) : (
+        <ul className="list">
+          {posts.map((post) => (
             <li key={post.id} className="post-item">
-              <span className="itemName">{post.title}</span>
-              <span className="itemContent">
-                {post.content ? <p>{post.content}</p> : <p>No content provided.</p>}
-              </span>
+              <div className="post-content">
+                <span className="itemName">{post.title}</span>
+                <span className="itemContent">
+                  {post.content ? (
+                    <p>
+                      {post.content.substring(0, 100)}
+                      {post.content.length > 100 ? "..." : ""}
+                    </p>
+                  ) : (
+                    <p className="no-content">No content provided.</p>
+                  )}
+                </span>
+              </div>
+              
+              {/* Post metadata */}
+              <div className="post-meta">
+                <span className="date">
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </span>
+                {post.createdAt !== post.updatedAt && (
+                  <span className="edited">
+                    (Updated: {new Date(post.updatedAt).toLocaleDateString()})
+                  </span>
+                )}
+              </div>
+              
+              {/* Action buttons */}
               <div className="actions">
-                <button onClick={() => handleEditInit(post)}>Edit</button>
-                <button
-                  aria-label={`Remove ${post.title}`}
+                <Link to={`/app/posts/${post.id}`} className="action-btn view">
+                  View
+                </Link>
+                <Link to={`/app/posts/${post.id}/edit`} className="action-btn edit">
+                  Edit
+                </Link>
+                <button 
+                  className="action-btn delete"
                   onClick={() => handleDelete(post.id)}
                 >
                   Delete
                 </button>
               </div>
+              
+              {/* Placeholder for future social features */}
+              <div className="social-actions">
+                <span className="action-placeholder">
+                  0 likes
+                </span>
+                <span className="action-placeholder">
+                  0 comments
+                </span>
+              </div>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
