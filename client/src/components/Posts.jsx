@@ -6,6 +6,9 @@ import { Link } from "react-router-dom";
 import usePostsCrud from "../hooks/usePostsCrud";
 import { GOOD_DEEDS, GOOD_DEEDS_ARRAY } from "../config/goodDeeds";
 import { getDeedInfo, getCleanContent } from "../utils/deedUtils";
+import LikeButton from "./LikeButton";
+import CommentButton from "./CommentButton";
+
 
 export default function Posts() {
   const {
@@ -254,14 +257,9 @@ export default function Posts() {
                   </button>
                 </div>
                 
-                {/* Placeholder for future social features */}
                 <div className="social-actions">
-                  <span className="action-placeholder">
-                    0 likes
-                  </span>
-                  <span className="action-placeholder">
-                    0 comments
-                  </span>
+                  <LikeButton postId={post.id} />
+                  <CommentButton postId={post.id} />
                 </div>
               </li>
             );

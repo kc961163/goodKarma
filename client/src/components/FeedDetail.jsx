@@ -3,7 +3,9 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useAuthUser } from "../security/AuthContext";
 import { fetchGetWithAuth } from "../security/fetchWithAuth";
+import LikeButton from "./LikeButton";
 import { extractDeedMetadata, getCleanContent, getFullDeedInfo } from "../utils/deedUtils";
+import CommentSection from './CommentSection';
 
 import "../style/postList.css";
 import "../style/goodDeeds.css";
@@ -94,21 +96,19 @@ export default function FeedDetail() {
         )}
       </div>
       
-      {/* Placeholder for future social features */}
       <div className="social-actions detail">
         <span className="action-placeholder">
-          0 likes
+          <LikeButton postId={post.id} />
         </span>
-        <span className="action-placeholder">
-          0 comments
-        </span>
+        {/* Remove CommentList and use CommentSection instead */}
       </div>
-      
-      {/* Comments section placeholder */}
-      <div className="comments-section">
-        <h3>Comments</h3>
-        <p className="placeholder-text">Comments will appear here in the future.</p>
-      </div>
+
+      {/* Add CommentSection after social-actions */}
+      <CommentSection 
+        postId={post.id} 
+        postOwnerId={post.userId} 
+        view="detail" 
+      />
       
       <div className="post-actions">
         <Link to="/app/feed" className="action-link back">

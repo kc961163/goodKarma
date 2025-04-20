@@ -200,24 +200,6 @@
   margin: 1.5rem 0;
 }
 
-/* Comments section styling */
-.comments-section {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--primary-light);
-}
-
-.comments-section h3 {
-  margin-top: 0;
-  font-size: 1.2rem;
-  color: var(--primary-dark);
-}
-
-.placeholder-text {
-  font-style: italic;
-  color: var(--text-light);
-}
-
 /* Detail view styling (common for both feed and posts) */
 .post-detail {
   background: var(--card-background);
@@ -301,6 +283,29 @@
   padding: 0.75rem;
   border-radius: var(--border-radius);
   margin-bottom: 1rem;
+}
+
+/* Like button styles */
+.like-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.like-button:hover {
+  transform: scale(1.05);
+  color: var(--primary-color);
+}
+
+.like-button.liked {
+  color: var(--danger-color);
 }
 
 /* Responsive adjustments */

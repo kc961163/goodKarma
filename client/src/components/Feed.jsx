@@ -3,9 +3,11 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useAuthUser } from "../security/AuthContext";
 import useFeed from "../hooks/useFeed";
+import LikeButton from "./LikeButton";
 import { getDeedInfo, getCleanContent } from "../utils/deedUtils";
 import "../style/postList.css";
 import "../style/goodDeeds.css";
+import CommentButton from "./CommentButton";
 
 export default function Feed() {
   const { feed, loading, paginationData, nextPage, prevPage } = useFeed();
@@ -83,14 +85,9 @@ export default function Feed() {
                     )}
                   </div>
                   
-                  {/* Placeholder for future social features */}
                   <div className="social-actions">
-                    <span className="action-placeholder">
-                      0 likes
-                    </span>
-                    <span className="action-placeholder">
-                      0 comments
-                    </span>
+                    <LikeButton postId={post.id} />
+                    <CommentButton postId={post.id} />
                   </div>
                 </li>
               );

@@ -335,6 +335,352 @@ app.get("/feed/:id", requireAuth, async (req, res) => {
   }
 });
 
+// Like a post
+app.post("/posts/:id/like", requireAuth, async (req, res) => {
+  try {
+    const postId = parseInt(req.params.id);
+    const userId = req.userId;
+    
+    // Check if post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId }
+    });
+    
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    
+    // Check if like already exists
+    const existingLike = await prisma.like.findFirst({
+      where: {
+        postId,
+        userId
+      }
+    });
+    
+    if (existingLike) {
+      return res.status(400).json({ error: "You have already liked this post" });
+    }
+    
+    // Create the like
+    const like = await prisma.like.create({
+      data: {
+        postId,
+        userId
+      }
+    });
+    
+    res.status(201).json(like);
+  } catch (error) {
+    console.error("Error liking post:", error);
+    res.status(500).json({ error: "Failed to like post" });
+  }
+});
+
+// Unlike a post
+app.delete("/posts/:id/like", requireAuth, async (req, res) => {
+  try {
+    const postId = parseInt(req.params.id);
+    const userId = req.userId;
+    
+    // Find the like
+    const like = await prisma.like.findFirst({
+      where: {
+        postId,
+        userId
+      }
+    });
+    
+    if (!like) {
+      return res.status(404).json({ error: "Like not found" });
+    }
+    
+    // Delete the like
+    await prisma.like.delete({
+      where: {
+        id: like.id
+      }
+    });
+    
+    res.json({ message: "Post unliked successfully" });
+  } catch (error) {
+    console.error("Error unliking post:", error);
+    res.status(500).json({ error: "Failed to unlike post" });
+  }
+});
+
+// Get likes for a post and check if user has liked
+app.get("/posts/:id/likes", requireAuth, async (req, res) => {
+  try {
+    const postId = parseInt(req.params.id);
+    const userId = req.userId;
+    
+    // Check if post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId }
+    });
+    
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    
+    // Count likes
+    const likesCount = await prisma.like.count({
+      where: {
+        postId
+      }
+    });
+    
+    // Check if user has liked
+    const userLike = await prisma.like.findFirst({
+      where: {
+        postId,
+        userId
+      }
+    });
+    
+    res.json({
+      count: likesCount,
+      userLiked: !!userLike
+    });
+  } catch (error) {
+    console.error("Error fetching likes:", error);
+    res.status(500).json({ error: "Failed to fetch likes" });
+  }
+});
+
+// Get all comments for a post
+app.get("/posts/:id/comments", requireAuth, async (req, res) => {
+  try {
+    const postId = parseInt(req.params.id);
+    
+    // Verify the post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId }
+    });
+    
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    
+    // Get all comments for this post
+    const comments = await prisma.comment.findMany({
+      where: { 
+        postId,
+        // Only get top-level comments (no parentId)
+        parentId: null 
+      },
+      orderBy: {
+        createdAt: "desc"
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        // Include replies (nested comments)
+        replies: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: "asc"
+          }
+        }
+      }
+    });
+    
+    res.json(comments);
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    res.status(500).json({ error: "Failed to fetch comments" });
+  }
+});
+
+// Add validation for comments
+const validateComment = [
+  body('content')
+    .notEmpty().withMessage('Comment cannot be empty')
+    .isLength({ max: 1000 }).withMessage('Comment is too long (max 1000 characters)'),
+  handleValidationErrors
+];
+
+// Create a comment
+app.post("/posts/:id/comments", requireAuth, validateComment, async (req, res) => {
+  try {
+    const postId = parseInt(req.params.id);
+    const userId = req.userId;
+    const { content, parentId } = req.body;
+    
+    // Verify the post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId }
+    });
+    
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+    
+    // If this is a reply, verify the parent comment exists and belongs to this post
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parseInt(parentId) }
+      });
+      
+      if (!parentComment || parentComment.postId !== postId) {
+        return res.status(400).json({ error: "Invalid parent comment" });
+      }
+    }
+    
+    // Create the comment
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        postId,
+        userId,
+        parentId: parentId ? parseInt(parentId) : null
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+    
+    res.status(201).json(comment);
+  } catch (error) {
+    console.error("Error creating comment:", error);
+    res.status(500).json({ error: "Failed to create comment" });
+  }
+});
+
+// Comment ownership verification middleware
+const verifyCommentOwnership = async (req, res, next) => {
+  try {
+    const commentId = parseInt(req.params.id);
+    
+    // Check if ID is valid
+    if (isNaN(commentId)) {
+      return res.status(400).json({ error: "Invalid comment ID" });
+    }
+    
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        post: {
+          select: {
+            userId: true
+          }
+        }
+      }
+    });
+    
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+    
+    // Allow if user is the comment author OR the post owner
+    if (comment.userId === req.userId || comment.post.userId === req.userId) {
+      // If we get here, the user can modify the comment
+      next();
+    } else {
+      return res.status(403).json({ error: "You don't have permission to modify this comment" });
+    }
+  } catch (error) {
+    console.error("Comment ownership verification error:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Update a comment (only the author can update)
+app.put("/comments/:id", requireAuth, validateComment, async (req, res) => {
+  try {
+    const commentId = parseInt(req.params.id);
+    const { content } = req.body;
+    const userId = req.userId;
+    
+    // Only the author can update the comment (not the post owner)
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId }
+    });
+    
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found" });
+    }
+    
+    if (comment.userId !== userId) {
+      return res.status(403).json({ error: "You can only edit your own comments" });
+    }
+    
+    // Update the comment
+    const updatedComment = await prisma.comment.update({
+      where: { id: commentId },
+      data: { content },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+    
+    res.json(updatedComment);
+  } catch (error) {
+    console.error("Error updating comment:", error);
+    res.status(500).json({ error: "Failed to update comment" });
+  }
+});
+
+// Delete a comment (author or post owner can delete)
+app.delete("/comments/:id", requireAuth, verifyCommentOwnership, async (req, res) => {
+  try {
+    const commentId = parseInt(req.params.id);
+    
+    // Delete the comment
+    const deletedComment = await prisma.comment.delete({
+      where: { id: commentId }
+    });
+    
+    res.json(deletedComment);
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    res.status(500).json({ error: "Failed to delete comment" });
+  }
+});
+
+// Get comment count for a post
+app.get("/posts/:id/comments/count", requireAuth, async (req, res) => {
+  try {
+    const postId = parseInt(req.params.id);
+    
+    // Count all comments for this post
+    const commentCount = await prisma.comment.count({
+      where: { postId }
+    });
+    
+    res.json({ count: commentCount });
+  } catch (error) {
+    console.error("Error counting comments:", error);
+    res.status(500).json({ error: "Failed to count comments" });
+  }
+});
+
 app.listen(8000, () => {
   console.log("Server running on http://localhost:8000 🎉 🚀");
 });
