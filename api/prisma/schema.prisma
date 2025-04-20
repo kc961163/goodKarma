@@ -36,6 +36,7 @@ model User {
   sessions Session[]
   comments Comment[]
   likes    Like[]
+  coachingData CoachingData?
 }
 
 model Session {
@@ -72,4 +73,16 @@ model Like {
   userId    Int
 
   @@unique([postId, userId]) // Ensures a user can only like a post once
+}
+
+model CoachingData {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int      @unique
+  userProfile Json?    // Stores user profile data
+  goals       Json?    // Stores user goals
+  advice      Json?    // Stores API responses for advice
+  progress    Json?    // Stores progress tracking data
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

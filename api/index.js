@@ -681,6 +681,183 @@ app.get("/posts/:id/comments/count", requireAuth, async (req, res) => {
   }
 });
 
+// Get coaching data for a user
+app.get("/users/:userId/coaching", requireAuth, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    // Ensure user can only access their own data
+    if (userId !== req.userId) {
+      return res.status(403).json({ error: "Unauthorized access to coaching data" });
+    }
+    
+    // Find coaching data for the user
+    const coachingData = await prisma.coachingData.findUnique({
+      where: { userId }
+    });
+    
+    res.json(coachingData || { userId });
+  } catch (error) {
+    console.error("Error fetching coaching data:", error);
+    res.status(500).json({ error: "Failed to retrieve coaching data" });
+  }
+});
+
+// Create or update coaching data
+app.post("/users/:userId/coaching", requireAuth, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    // Ensure user can only modify their own data
+    if (userId !== req.userId) {
+      return res.status(403).json({ error: "Unauthorized access to coaching data" });
+    }
+    
+    const { userProfile, goals, advice, progress } = req.body;
+    
+    // Upsert coaching data (update if exists, create if doesn't)
+    const coachingData = await prisma.coachingData.upsert({
+      where: { userId },
+      update: {
+        // Only update fields that are provided
+        ...(userProfile && { userProfile }),
+        ...(goals && { goals }),
+        ...(advice && { advice }),
+        ...(progress && { progress })
+      },
+      create: {
+        userId,
+        ...(userProfile && { userProfile }),
+        ...(goals && { goals }),
+        ...(advice && { advice }),
+        ...(progress && { progress })
+      }
+    });
+    
+    res.json(coachingData);
+  } catch (error) {
+    console.error("Error updating coaching data:", error);
+    res.status(500).json({ error: "Failed to update coaching data" });
+  }
+});
+
+// Get coaching progress
+app.get("/users/:userId/coaching/progress", requireAuth, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (userId !== req.userId) {
+      return res.status(403).json({ error: "Unauthorized access to coaching progress" });
+    }
+    
+    const coachingData = await prisma.coachingData.findUnique({
+      where: { userId },
+      select: { progress: true }
+    });
+    
+    res.json(coachingData?.progress || null);
+  } catch (error) {
+    console.error("Error fetching coaching progress:", error);
+    res.status(500).json({ error: "Failed to retrieve coaching progress" });
+  }
+});
+
+// Update coaching progress
+app.post("/users/:userId/coaching/progress", requireAuth, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (userId !== req.userId) {
+      return res.status(403).json({ error: "Unauthorized access to coaching progress" });
+    }
+    
+    const { progress } = req.body;
+    
+    const coachingData = await prisma.coachingData.upsert({
+      where: { userId },
+      update: { progress },
+      create: { userId, progress }
+    });
+    
+    res.json(coachingData);
+  } catch (error) {
+    console.error("Error updating coaching progress:", error);
+    res.status(500).json({ error: "Failed to update coaching progress" });
+  }
+});
+
+// Get karma statistics for a user
+app.get("/users/:userId/karma-stats", requireAuth, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    // Ensure user can only access their own data
+    if (userId !== req.userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    
+    // Get all user's posts
+    const posts = await prisma.post.findMany({
+      where: { userId },
+      include: {
+        likes: true
+      }
+    });
+    
+    // Initialize category counters
+    const categories = {
+      meditation: 0,
+      journaling: 0,
+      yoga: 0,
+      volunteering: 0,
+      donation: 0
+    };
+    
+    // Helper function to extract deed type from post content
+    const extractDeedMetadata = (contentStr) => {
+      if (!contentStr) return null;
+      
+      const metadataMatch = contentStr.match(/<!-- DEED_METADATA:(.*?) -->/);
+      if (!metadataMatch || !metadataMatch[1]) return null;
+      
+      try {
+        return JSON.parse(metadataMatch[1]);
+      } catch (e) {
+        console.error("Error parsing deed metadata:", e);
+        return null;
+      }
+    };
+    
+    // Count posts by category and calculate points
+    let totalPoints = 0;
+    
+    posts.forEach(post => {
+      // Extract deed type from post content
+      const metadata = extractDeedMetadata(post.content);
+      if (metadata && metadata.deedType) {
+        // Increment category counter
+        if (categories.hasOwnProperty(metadata.deedType)) {
+          categories[metadata.deedType] += 1;
+        }
+        
+        // Calculate points (base points + bonus for likes)
+        const basePoints = 10; // Base points per deed
+        const likeBonus = post.likes.length * 2; // 2 points per like
+        totalPoints += basePoints + likeBonus;
+      }
+    });
+    
+    res.json({
+      categories,
+      totalPoints,
+      postCount: posts.length
+    });
+  } catch (error) {
+    console.error("Error calculating karma stats:", error);
+    res.status(500).json({ error: "Failed to calculate karma statistics" });
+  }
+});
+
 app.listen(8000, () => {
   console.log("Server running on http://localhost:8000 🎉 🚀");
 });
