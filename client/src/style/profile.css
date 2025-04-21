@@ -613,3 +613,27 @@
     color: var(--text-secondary);
     font-size: 0.9rem;
   }
+
+  .api-limit-notice {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+  }
+  
+  .api-limit-notice h4 {
+    margin-top: 0;
+    color: #856404;
+  }
+  
+  .api-limit-notice ul {
+    margin-bottom: 0;
+  }
+  
+  .limit-message {
+    color: #856404;
+    font-style: italic;
+    margin-top: 1rem;
+  }

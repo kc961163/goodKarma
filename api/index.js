@@ -715,6 +715,24 @@ app.post("/users/:userId/coaching", requireAuth, async (req, res) => {
     
     const { userProfile, goals, advice, progress } = req.body;
     
+    // Get current data for API limit tracking
+    const currentData = await prisma.coachingData.findUnique({
+      where: { userId }
+    });
+    
+    // Check if we're in a new month for advice call
+    const currentMonth = new Date().getMonth();
+    const lastAdviceMonth = currentData?.lastAdviceCallDate 
+      ? new Date(currentData.lastAdviceCallDate).getMonth() 
+      : -1;
+    const resetAdviceCall = currentMonth !== lastAdviceMonth;
+    
+    // Check if we're in a new month for progress call
+    const lastProgressMonth = currentData?.lastProgressCallDate 
+      ? new Date(currentData.lastProgressCallDate).getMonth() 
+      : -1;
+    const resetProgressCall = currentMonth !== lastProgressMonth;
+    
     // Upsert coaching data (update if exists, create if doesn't)
     const coachingData = await prisma.coachingData.upsert({
       where: { userId },
@@ -722,15 +740,45 @@ app.post("/users/:userId/coaching", requireAuth, async (req, res) => {
         // Only update fields that are provided
         ...(userProfile && { userProfile }),
         ...(goals && { goals }),
-        ...(advice && { advice }),
-        ...(progress && { progress })
+        
+        // Update advice data and mark API call as used
+        ...(advice && { 
+          advice,
+          adviceCallUsedThisMonth: true,
+          lastAdviceCallDate: new Date(),
+        }),
+        
+        // Update progress data and mark API call as used
+        ...(progress && { 
+          progress,
+          progressCallUsedThisMonth: true,
+          lastProgressCallDate: new Date(),
+        }),
+        
+        // Reset advice call limit if we're in a new month
+        ...(resetAdviceCall && { 
+          adviceCallUsedThisMonth: advice ? true : false,
+        }),
+        
+        // Reset progress call limit if we're in a new month
+        ...(resetProgressCall && { 
+          progressCallUsedThisMonth: progress ? true : false,
+        }),
       },
       create: {
         userId,
         ...(userProfile && { userProfile }),
         ...(goals && { goals }),
-        ...(advice && { advice }),
-        ...(progress && { progress })
+        ...(advice && { 
+          advice,
+          adviceCallUsedThisMonth: true,
+          lastAdviceCallDate: new Date(),
+        }),
+        ...(progress && { 
+          progress,
+          progressCallUsedThisMonth: true,
+          lastProgressCallDate: new Date(),
+        }),
       }
     });
     
@@ -738,6 +786,63 @@ app.post("/users/:userId/coaching", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Error updating coaching data:", error);
     res.status(500).json({ error: "Failed to update coaching data" });
+  }
+});
+
+app.get("/users/:userId/coaching/api-status", requireAuth, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (userId !== req.userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    
+    const coachingData = await prisma.coachingData.findUnique({
+      where: { userId },
+      select: { 
+        adviceCallUsedThisMonth: true,
+        progressCallUsedThisMonth: true,
+        lastAdviceCallDate: true,
+        lastProgressCallDate: true
+      }
+    });
+    
+    if (!coachingData) {
+      return res.json({
+        canMakeAdviceCall: true,
+        canMakeProgressCall: true,
+        nextAdviceResetDate: null,
+        nextProgressResetDate: null
+      });
+    }
+    
+    // Check if this is a new month since the last advice call
+    const currentMonth = new Date().getMonth();
+    const lastAdviceMonth = coachingData.lastAdviceCallDate 
+      ? new Date(coachingData.lastAdviceCallDate).getMonth() 
+      : -1;
+    
+    // Check if this is a new month since the last progress call
+    const lastProgressMonth = coachingData.lastProgressCallDate 
+      ? new Date(coachingData.lastProgressCallDate).getMonth() 
+      : -1;
+    
+    // Calculate next reset date (1st of next month)
+    const today = new Date();
+    const nextResetDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    
+    // Can make API calls if never used before OR in a new month
+    const canMakeAdviceCall = !coachingData.adviceCallUsedThisMonth || currentMonth !== lastAdviceMonth;
+    const canMakeProgressCall = !coachingData.progressCallUsedThisMonth || currentMonth !== lastProgressMonth;
+    
+    res.json({
+      canMakeAdviceCall,
+      canMakeProgressCall,
+      nextResetDate: nextResetDate
+    });
+  } catch (error) {
+    console.error("Error checking API status:", error);
+    res.status(500).json({ error: "Failed to check API status" });
   }
 });
 
@@ -771,12 +876,32 @@ app.post("/users/:userId/coaching/progress", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "Unauthorized access to coaching progress" });
     }
     
-    const { progress } = req.body;
+    // Extract both progress data and updated insights
+    const { progress, updatedAdvice } = req.body;
     
+    // Get current coaching data to ensure we have the latest advice
+    const currentData = await prisma.coachingData.findUnique({
+      where: { userId },
+      select: { advice: true }
+    });
+    
+    // Update both progress AND advice fields
     const coachingData = await prisma.coachingData.upsert({
       where: { userId },
-      update: { progress },
-      create: { userId, progress }
+      update: { 
+        progress,
+        // Use updatedAdvice which should already contain merged data
+        ...(updatedAdvice && { advice: updatedAdvice }),
+        progressCallUsedThisMonth: true,
+        lastProgressCallDate: new Date()
+      },
+      create: { 
+        userId, 
+        progress,
+        ...(updatedAdvice && { advice: updatedAdvice }),
+        progressCallUsedThisMonth: true,
+        lastProgressCallDate: new Date()
+      }
     });
     
     res.json(coachingData);

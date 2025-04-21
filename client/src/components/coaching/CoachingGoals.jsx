@@ -4,7 +4,8 @@ import { useState } from 'react';
 export default function CoachingGoals({ 
   existingGoals = [],
   onSaveGoals,
-  isLoading = false
+  isLoading = false,
+  canMakeAdviceCall = true // Add this new prop
 }) {
   const [goals, setGoals] = useState(existingGoals.length > 0 ? existingGoals : [
     { area: '', description: '', priority: 'medium', timeline: '3 months' }
@@ -121,10 +122,18 @@ export default function CoachingGoals({
           <button
             type="submit"
             className="btn-primary"
-            disabled={isLoading}
+            disabled={isLoading || !canMakeAdviceCall}
           >
-            {isLoading ? 'Saving...' : 'Save Goals & Get Coaching'}
+            {isLoading ? 'Saving...' : !canMakeAdviceCall 
+              ? 'Monthly Advice Call Used' 
+              : 'Save Goals & Get Coaching'}
           </button>
+          
+          {!canMakeAdviceCall && (
+            <p className="limit-message">
+              You've used your monthly coaching advice call. You can still update your goals, but new advice will be available next month.
+            </p>
+          )}
         </div>
       </form>
     </div>

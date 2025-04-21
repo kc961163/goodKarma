@@ -1,4 +1,3 @@
-// src/services/lifeCoachService.js
 import axios from 'axios';
 import { logError } from '../utils/errors/errorLogger';
 
@@ -18,45 +17,14 @@ const lifeCoachApi = axios.create({
  * @returns {Promise<Object>} - Life coaching advice
  */
 export const getLifeAdvice = async (userData) => {
-    try {
-      // Initial request
-      const initialResponse = await lifeCoachApi.post('/getLifeAdvice', userData);
-      
-      // Check if we got a direct result or need to poll
-      if (initialResponse.data.status === 'success' && initialResponse.data.result) {
-        return initialResponse.data;
-      }
-      
-      // Get queue information
-      const queueId = initialResponse.data.queueId;
-      if (!queueId) {
-        throw new Error('No queue ID returned from API');
-      }
-      
-      // Return the queue information so the caller can handle polling
-      return {
-        status: 'queued',
-        queueId,
-        message: initialResponse.data.message || 'Request queued',
-        pollUrl: `/getLifeAdvice?queueId=${queueId}`
-      };
-    } catch (error) {
-      return logError(error, 'getLifeAdvice', { userData });
-    }
-  };
-  
-  // New function to check queue status
-  export const checkQueueStatus = async (queueId) => {
-    try {
-      // Use POST with the queueId in the request body
-      const response = await lifeCoachApi.post('/getLifeAdvice', {
-        queueId: queueId
-      });
-      return response.data;
-    } catch (error) {
-      return logError(error, 'checkQueueStatus', { queueId });
-    }
-  };
+  try {
+    // Always use noqueue=1 to avoid polling and get immediate results
+    const response = await lifeCoachApi.post('/getLifeAdvice?noqueue=1', userData);
+    return response.data;
+  } catch (error) {
+    return logError(error, 'getLifeAdvice', { userData });
+  }
+};
 
 /**
  * Updates and tracks user progress towards goals
@@ -65,7 +33,8 @@ export const getLifeAdvice = async (userData) => {
  */
 export const updateProgress = async (progressData) => {
   try {
-    const response = await lifeCoachApi.post('/updateProgress', progressData);
+    // Always use noqueue=1 to avoid polling and get immediate results
+    const response = await lifeCoachApi.post('/updateProgress?noqueue=1', progressData);
     return response.data;
   } catch (error) {
     return logError(error, 'updateProgress', { progressData });
@@ -98,8 +67,8 @@ export const testApiConnection = async () => {
       lang: "en"
     };
     
-    // We'll just check if we can connect, but won't use the full response
-    const response = await lifeCoachApi.post('/getLifeAdvice?noqueue=1', testData);
+    // Just check if we can connect without using a real call
+    const response = await lifeCoachApi.options('/getLifeAdvice');
     
     return response.status === 200;
   } catch (error) {

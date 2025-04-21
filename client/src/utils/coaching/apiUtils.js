@@ -106,3 +106,92 @@ export const createProgressSummary = (progress) => {
     return null;
   }
 };
+
+/**
+ * Extracts updated insights from progress response and merges with existing advice
+ * @param {Object} progressData - Progress update response data
+ * @param {Object} existingAdvice - Existing advice data to merge with
+ * @returns {Object} - Merged insights for the advice field
+ */
+export const extractProgressInsights = (progressData, existingAdvice = {}) => {
+  if (!progressData) return existingAdvice;
+  
+  try {
+    // Create a deep copy of the existing advice
+    const mergedAdvice = JSON.parse(JSON.stringify(existingAdvice || {}));
+    
+    // Ensure necessary structure exists
+    mergedAdvice.analysis = mergedAdvice.analysis || {};
+    mergedAdvice.recommendations = mergedAdvice.recommendations || {};
+    mergedAdvice.actionPlan = mergedAdvice.actionPlan || {};
+    mergedAdvice.analysis.strengthsAndWeaknesses = mergedAdvice.analysis.strengthsAndWeaknesses || 
+      { strengths: [], areasForImprovement: [] };
+    
+    // UPDATE: Map from "Progress Assessment" to currentSituation
+    if (progressData["Progress Assessment"]) {
+      const assessmentValues = Object.values(progressData["Progress Assessment"]);
+      if (assessmentValues.length > 0) {
+        mergedAdvice.analysis.currentSituation = assessmentValues.join(' ');
+      }
+    }
+    
+    // UPDATE: Map from "Achievement Analysis" to strengths
+    if (progressData["Achievement Analysis"]) {
+      const achievements = [];
+      Object.entries(progressData["Achievement Analysis"]).forEach(([area, details]) => {
+        if (details && details.description) {
+          achievements.push(details.description);
+        }
+      });
+      
+      if (achievements.length > 0) {
+        mergedAdvice.analysis.strengthsAndWeaknesses.strengths = achievements;
+      }
+    }
+    
+    // UPDATE: Map from "Setback Evaluation" to areasForImprovement
+    if (progressData["Setback Evaluation"]) {
+      const setbacks = [];
+      Object.entries(progressData["Setback Evaluation"]).forEach(([area, details]) => {
+        if (details && details.description) {
+          setbacks.push(details.description);
+        }
+      });
+      
+      if (setbacks.length > 0) {
+        mergedAdvice.analysis.strengthsAndWeaknesses.areasForImprovement = setbacks;
+      }
+    }
+    
+    // UPDATE: Map from "Adjusted Recommendations" to shortTerm recommendations
+    if (progressData["Adjusted Recommendations"]) {
+      const recommendations = [];
+      Object.entries(progressData["Adjusted Recommendations"]).forEach(([area, recommendation]) => {
+        if (typeof recommendation === 'string') {
+          recommendations.push({
+            area: area,
+            action: recommendation,
+            timeline: "1-3 months"
+          });
+        }
+      });
+      
+      if (recommendations.length > 0) {
+        mergedAdvice.recommendations.shortTerm = recommendations;
+      }
+    }
+    
+    // UPDATE: Map from "Next Steps" to immediate action plan
+    if (progressData["Next Steps"]) {
+      const nextSteps = Object.values(progressData["Next Steps"]);
+      if (nextSteps.length > 0) {
+        mergedAdvice.actionPlan.immediate = nextSteps;
+      }
+    }
+    
+    return mergedAdvice;
+  } catch (error) {
+    logError(error, 'extractProgressInsights', { progressData });
+    return existingAdvice; // Return original advice if we encounter an error
+  }
+};

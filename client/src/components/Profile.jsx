@@ -16,7 +16,9 @@ export default function Profile() {
     coachingData,
     getCoachingAdvice,
     updateCoachingProgress,
-    queueStatus
+    canMakeAdviceCall,
+    canMakeProgressCall,
+    nextResetDate
   } = useCoaching();
   
   const [activeTab, setActiveTab] = useState("profile");
@@ -29,39 +31,39 @@ export default function Profile() {
   });
   
   // Fetch karma statistics
-useEffect(() => {
-  const fetchKarmaStats = async () => {
-    if (!user?.id) return;
-    
-    try {
-      setStatsLoading(true);
-      // Replace placeholder with actual API call
-      const data = await fetchGetWithAuth(
-        `${process.env.REACT_APP_API_URL}/users/${user.id}/karma-stats`
-      );
+  useEffect(() => {
+    const fetchKarmaStats = async () => {
+      if (!user?.id) return;
       
-      setKarmaStats(data);
-    } catch (err) {
-      console.error("Error fetching karma stats:", err);
-      // Optionally set a default or error state
-      setKarmaStats({
-        categories: {
-          meditation: 0,
-          journaling: 0,
-          yoga: 0,
-          volunteering: 0,
-          donation: 0
-        },
-        totalPoints: 0,
-        postCount: 0
-      });
-    } finally {
-      setStatsLoading(false);
-    }
-  };
-  
-  fetchKarmaStats();
-}, [user?.id]);
+      try {
+        setStatsLoading(true);
+        // Replace placeholder with actual API call
+        const data = await fetchGetWithAuth(
+          `${process.env.REACT_APP_API_URL}/users/${user.id}/karma-stats`
+        );
+        
+        setKarmaStats(data);
+      } catch (err) {
+        console.error("Error fetching karma stats:", err);
+        // Optionally set a default or error state
+        setKarmaStats({
+          categories: {
+            meditation: 0,
+            journaling: 0,
+            yoga: 0,
+            volunteering: 0,
+            donation: 0
+          },
+          totalPoints: 0,
+          postCount: 0
+        });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    
+    fetchKarmaStats();
+  }, [user?.id]);
   
   // Handle coaching setup
   const handleSetupSubmit = async (e) => {
@@ -249,6 +251,20 @@ useEffect(() => {
             <div className="coaching-intro">
               <h2>Personal Growth Coaching</h2>
               <p>Get personalized coaching based on your karma activities and goals. Our AI coach analyzes your patterns and provides actionable insights to help you grow.</p>
+              
+              {/* API limit status indicator */}
+              {(!canMakeAdviceCall || !canMakeProgressCall) && (
+                <div className="api-limit-notice">
+                  <h4>Monthly API Calls</h4>
+                  <ul>
+                    <li>Coaching Advice: {canMakeAdviceCall ? '✅ Available' : '❌ Used for this month'}</li>
+                    <li>Progress Updates: {canMakeProgressCall ? '✅ Available' : '❌ Used for this month'}</li>
+                    {nextResetDate && (
+                      <li>Next reset: {new Date(nextResetDate).toLocaleDateString()}</li>
+                    )}
+                  </ul>
+                </div>
+              )}
             </div>
             
             {coachingData?.userProfile ? (
@@ -318,9 +334,21 @@ useEffect(() => {
                     ></textarea>
                   </div>
                   
-                  <button type="submit" className="btn-primary">
-                    Start My Coaching Journey
+                  <button 
+                    type="submit" 
+                    className="btn-primary"
+                    disabled={!canMakeAdviceCall}
+                  >
+                    {!canMakeAdviceCall 
+                      ? "Monthly Advice Call Used" 
+                      : "Start My Coaching Journey"}
                   </button>
+                  
+                  {!canMakeAdviceCall && (
+                    <p className="limit-message">
+                      You've used your monthly coaching advice call. Please try again next month.
+                    </p>
+                  )}
                 </form>
               </div>
             )}
@@ -329,32 +357,27 @@ useEffect(() => {
         
         {/* Goals Tab */}
         {activeTab === "goals" && (
-  coachingLoading || queueStatus ? (
-    <div className="loading-container">
-      {queueStatus ? (
-        <div className="queue-status">
-          <h3>Generating your personalized coaching advice...</h3>
-          <p>{queueStatus.message}</p>
-          <div className="progress-bar-container">
-            <div 
-              className="progress-bar" 
-              style={{width: `${queueStatus.progress}%`}}
-            ></div>
-          </div>
-          <p className="queue-note">This may take 1-2 minutes. Please wait.</p>
-        </div>
-      ) : (
-        <p>Loading coaching data...</p>
-      )}
-    </div>
-  ) : (
-    <CoachingGoals
-      existingGoals={coachingData?.userProfile?.goals || []}
-      onSaveGoals={handleSaveGoals}
-      isLoading={coachingLoading}
-    />
-  )
-)}
+          coachingLoading ? (
+            <div className="loading-container">
+              <p>Loading coaching data...</p>
+            </div>
+          ) : (
+            <>
+              {!canMakeAdviceCall && (
+                <div className="api-limit-notice">
+                  <h4>Monthly Coaching Advice Limit Reached</h4>
+                  <p>You've already received personalized coaching this month. Your next coaching refresh will be available on {nextResetDate ? new Date(nextResetDate).toLocaleDateString() : 'the first of next month'}.</p>
+                </div>
+              )}
+              <CoachingGoals
+                existingGoals={coachingData?.goals || []}
+                onSaveGoals={handleSaveGoals}
+                isLoading={coachingLoading}
+                canMakeAdviceCall={canMakeAdviceCall}
+              />
+            </>
+          )
+        )}
         
         {/* Insights Tab */}
         {activeTab === "insights" && coachingData?.advice && (
@@ -363,12 +386,21 @@ useEffect(() => {
         
         {/* Progress Tab */}
         {activeTab === "progress" && coachingData?.advice && (
-          <ProgressTracker
-            goals={coachingData?.userProfile?.goals || []}
-            progress={coachingData?.progress}
-            onUpdateProgress={handleUpdateProgress}
-            isLoading={coachingLoading}
-          />
+          <>
+            {!canMakeProgressCall && (
+              <div className="api-limit-notice">
+                <h4>Monthly Progress Update Limit Reached</h4>
+                <p>You've already submitted a progress update this month. Your next progress update will be available on {nextResetDate ? new Date(nextResetDate).toLocaleDateString() : 'the first of next month'}.</p>
+              </div>
+            )}
+            <ProgressTracker
+              goals={coachingData?.goals || []}
+              progress={coachingData?.progress}
+              onUpdateProgress={handleUpdateProgress}
+              isLoading={coachingLoading}
+              canMakeProgressCall={canMakeProgressCall}
+            />
+          </>
         )}
         
         {/* Handle error state */}

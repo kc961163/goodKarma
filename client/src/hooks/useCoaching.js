@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthUser } from '../security/AuthContext';
 import { fetchGetWithAuth, fetchPostWithAuth } from '../security/fetchWithAuth';
-import { getLifeAdvice, checkQueueStatus, updateProgress } from '../services/lifeCoachService';
+import { getLifeAdvice, updateProgress } from '../services/lifeCoachService';
 
 import { 
   formatLifeAdviceRequest, 
@@ -11,7 +11,8 @@ import {
 import { 
   parseLifeCoachResponse,
   extractActionableInsights,
-  createProgressSummary
+  createProgressSummary,
+  extractProgressInsights
 } from '../utils/coaching/apiUtils';
 import { logError } from '../utils/errors/errorLogger';
 
@@ -25,10 +26,11 @@ export default function useCoaching() {
   const [coachingData, setCoachingData] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
   const [lastFetchTime, setLastFetchTime] = useState(0);
-  const [queueStatus, setQueueStatus] = useState(null);
   
-  // Track when we last called the external API to avoid rate limits
-  const [lastApiCallTime, setLastApiCallTime] = useState(0);
+  // New state variables for API limit tracking
+  const [canMakeAdviceCall, setCanMakeAdviceCall] = useState(true);
+  const [canMakeProgressCall, setCanMakeProgressCall] = useState(true);
+  const [nextResetDate, setNextResetDate] = useState(null);
   
   // Fetch coaching data from backend
   const fetchCoachingData = useCallback(async (force = false) => {
@@ -63,6 +65,26 @@ export default function useCoaching() {
     }
   }, [user?.id, lastFetchTime, coachingData]);
   
+  // New function to check API limits
+  const checkApiLimits = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const response = await fetchGetWithAuth(
+        `${process.env.REACT_APP_API_URL}/users/${user.id}/coaching/api-status`
+      );
+      
+      setCanMakeAdviceCall(response.canMakeAdviceCall);
+      setCanMakeProgressCall(response.canMakeProgressCall);
+      setNextResetDate(response.nextResetDate);
+      
+      return response;
+    } catch (err) {
+      logError(err, 'checkApiLimits');
+      return null;
+    }
+  }, [user?.id]);
+  
   // Fetch user posts to analyze for coaching
   const fetchUserPosts = useCallback(async () => {
     if (!user?.id) return [];
@@ -83,13 +105,16 @@ export default function useCoaching() {
   // Initialize hook by loading data
   useEffect(() => {
     if (user?.id) {
-      // First load coaching data
-      fetchCoachingData().then(() => {
-        // Then load posts
-        fetchUserPosts();
+      // Check API limits first
+      checkApiLimits().then(() => {
+        // Then load coaching data
+        fetchCoachingData().then(() => {
+          // Then load posts
+          fetchUserPosts();
+        });
       });
     }
-  }, [user?.id, fetchCoachingData, fetchUserPosts]);
+  }, [user?.id, fetchCoachingData, fetchUserPosts, checkApiLimits]);
   
   // Save coaching profile to the backend
   const saveCoachingProfile = async (profileData) => {
@@ -136,49 +161,37 @@ export default function useCoaching() {
       setLoading(true);
       setError(null);
       
+      // Check if user has used their advice API call this month
+      await checkApiLimits();
+      
+      if (!canMakeAdviceCall) {
+        setError('You have already used your monthly coaching advice. Next reset: ' + 
+          new Date(nextResetDate).toLocaleDateString());
+        return null;
+      }
+      
       // Ensure we have user posts
       const posts = userPosts.length > 0 ? userPosts : await fetchUserPosts();
       
       // Combine profile data with posts data
       const request = formatLifeAdviceRequest(profileData, posts);
       
-      // Add rate limiting to avoid hitting API too frequently
-      const now = Date.now();
-      if ((now - lastApiCallTime) < 1000) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      setLastApiCallTime(Date.now());
-      
-      // Call the Life Coach API
+      // Call the Life Coach API - results should be immediate now with noqueue=1
       const response = await getLifeAdvice(request);
       
-      // Check if queued or immediate result
-      if (response.status === 'queued') {
-        // Start polling
-        setQueueStatus({
-          queueId: response.queueId,
-          message: response.message,
-          progress: 0
-        });
-        
-        // Start polling in the background
-        pollForResults(response.queueId, profileData, request);
-        
-        return null; // Return null for now, will update state when results arrive
-      }
-      
-      // If we got immediate results, process them
+      // Process successful response
       if (response.status === 'success' && response.result) {
         const adviceResult = response.result;
         
         // Extract actionable insights
         const insights = extractActionableInsights(adviceResult);
         
-        // Save to backend
+        // Save to backend and mark monthly call as used
         await fetchPostWithAuth(
           `${process.env.REACT_APP_API_URL}/users/${user.id}/coaching`,
           { 
-            userProfile: request,
+            userProfile: request.userProfile,
+            goals: request.goals,             
             advice: adviceResult,
             insights
           }
@@ -186,11 +199,12 @@ export default function useCoaching() {
         
         // Update local state
         await fetchCoachingData(true);
+        await checkApiLimits();
         
         return adviceResult;
       }
       
-      throw new Error('Unexpected response format from API');
+      throw new Error('Failed to get coaching advice');
     } catch (err) {
       setError('Failed to get coaching advice');
       logError(err, 'getCoachingAdvice', { profileData });
@@ -199,132 +213,82 @@ export default function useCoaching() {
       setLoading(false);
     }
   };
-
-  const pollForResults = async (queueId, profileData, originalRequest) => {
-    try {
-      // Initial delay
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      
-      // Start polling loop
-      let attempts = 0;
-      const maxAttempts = 12; // 1 minute (12 x 5 seconds)
-      
-      while (attempts < maxAttempts) {
-        const result = await checkQueueStatus(queueId);
-        
-        // Update queue status with progress
-        setQueueStatus(prev => ({
-          ...prev,
-          progress: Math.min(90, attempts * 10), // Estimate progress percentage
-          message: result.message || prev.message
-        }));
-        
-        // Check if results are ready
-        if (result.status === 'success' && result.result) {
-          const adviceResult = result.result;
-          
-          // Extract actionable insights
-          const insights = extractActionableInsights(adviceResult);
-          
-          // Save to backend
-          await fetchPostWithAuth(
-            `${process.env.REACT_APP_API_URL}/users/${user.id}/coaching`,
-            { 
-              userProfile: originalRequest,
-              advice: adviceResult,
-              insights
-            }
-          );
-          
-          // Update local state
-          await fetchCoachingData(true);
-          
-          // Clear queue status
-          setQueueStatus(null);
-          return;
-        }
-        
-        // Wait before next attempt
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        attempts++;
-      }
-      
-      // If we reach maximum attempts
-      setError('Timed out waiting for coaching advice');
-      setQueueStatus(null);
-    } catch (err) {
-      setError('Error checking queue status');
-      logError(err, 'pollForResults', { queueId });
-      setQueueStatus(null);
-    }
-  };
   
   // Update coaching progress
-  const updateCoachingProgress = async (progressData) => {
-    if (!user?.id) return null;
+const updateCoachingProgress = async (progressData) => {
+  if (!user?.id) return null;
+  
+  try {
+    setLoading(true);
+    setError(null);
     
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Ensure we have coaching data
-      const coaching = coachingData || await fetchCoachingData();
-      
-      if (!coaching || !coaching.userProfile) {
-        throw new Error('No coaching profile found. Please set up coaching first.');
-      }
-      
-      // Format progress update request
-      const request = formatProgressUpdateRequest(progressData, coaching.userProfile);
-      
-      // Add rate limiting
-      const now = Date.now();
-      if ((now - lastApiCallTime) < 1000) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
-      // Call the Life Coach API
-      const response = await updateProgress(request);
-      setLastApiCallTime(Date.now());
-      
-      // Parse and validate response
-      const progressResult = parseLifeCoachResponse(response);
-      
-      if (!progressResult) {
-        throw new Error('Failed to get valid progress update');
-      }
-      
-      // Create progress summary
-      const progressSummary = createProgressSummary(progressResult);
-      
-      // Save to backend
-      await fetchPostWithAuth(
-        `${process.env.REACT_APP_API_URL}/users/${user.id}/coaching/progress`,
-        { 
-          progress: progressResult,
-          summary: progressSummary
-        }
-      );
-      
-      // Update local state
-      await fetchCoachingData(true);
-      
-      return progressResult;
-    } catch (err) {
-      setError('Failed to update coaching progress');
-      logError(err, 'updateCoachingProgress', { progressData });
+    // Check if user has used their progress API call this month
+    await checkApiLimits();
+    
+    if (!canMakeProgressCall) {
+      setError('You have already used your monthly progress update. Next reset: ' + 
+        new Date(nextResetDate).toLocaleDateString());
       return null;
-    } finally {
-      setLoading(false);
     }
-  };
+    
+    // Ensure we have coaching data with advice
+    const coaching = coachingData || await fetchCoachingData();
+    
+    if (!coaching || !coaching.userProfile) {
+      throw new Error('No coaching profile found. Please set up coaching first.');
+    }
+    
+    // Format progress update request
+    const request = formatProgressUpdateRequest(progressData, coaching.userProfile);
+    
+    // Call the Life Coach API with immediate results
+    const response = await updateProgress(request);
+    
+    // Parse and validate response
+    const progressResult = parseLifeCoachResponse(response);
+    
+    if (!progressResult) {
+      throw new Error('Failed to get valid progress update');
+    }
+    
+    // Create progress summary
+    const progressSummary = createProgressSummary(progressResult);
+    
+    // Extract and merge progress insights with existing advice
+    const updatedAdvice = extractProgressInsights(progressResult, coaching.advice);
+    
+    // Save to backend with both progress data and merged advice
+    await fetchPostWithAuth(
+      `${process.env.REACT_APP_API_URL}/users/${user.id}/coaching/progress`,
+      { 
+        progress: progressResult,
+        summary: progressSummary,
+        updatedAdvice: updatedAdvice
+      }
+    );
+    
+    // Update local state
+    await fetchCoachingData(true);
+    await checkApiLimits();
+    
+    return progressResult;
+  } catch (err) {
+    setError('Failed to update coaching progress');
+    logError(err, 'updateCoachingProgress', { progressData });
+    return null;
+  } finally {
+    setLoading(false);
+  }
+};
   
   return {
-    loading,                  // Loading state
-    error,                    // Error state
-    coachingData,             // Current coaching data
-    userPosts,                // User's karma posts
-    queueStatus,              // Add this line to export queue status
+    loading,
+    error,
+    coachingData,
+    userPosts,
+    canMakeAdviceCall,
+    canMakeProgressCall,
+    nextResetDate,
     refreshData: fetchCoachingData,
     saveCoachingProfile,
     getCoachingAdvice,

@@ -5,7 +5,8 @@ export default function ProgressTracker({
   goals = [], 
   progress = null,
   onUpdateProgress,
-  isLoading = false
+  isLoading = false,
+  canMakeProgressCall = true // Add this new prop
 }) {
   const [achievements, setAchievements] = useState([
     { area: '', description: '', impact: 'medium', date: getCurrentDate() }
@@ -289,10 +290,18 @@ export default function ProgressTracker({
           <button
             type="submit"
             className="btn-primary"
-            disabled={isLoading}
+            disabled={isLoading || !canMakeProgressCall}
           >
-            {isLoading ? 'Updating...' : 'Update Progress & Get New Insights'}
+            {isLoading ? 'Updating...' : !canMakeProgressCall
+              ? 'Monthly Progress Call Used'
+              : 'Update Progress & Get New Insights'}
           </button>
+          
+          {!canMakeProgressCall && (
+            <p className="limit-message">
+              You've used your monthly progress update call. You can still track your progress locally, but new insights will be available next month.
+            </p>
+          )}
         </div>
       </form>
     </div>

@@ -83,6 +83,10 @@ model CoachingData {
   goals       Json?    // Stores user goals
   advice      Json?    // Stores API responses for advice
   progress    Json?    // Stores progress tracking data
+  adviceCallUsedThisMonth Boolean @default(false)
+  progressCallUsedThisMonth Boolean @default(false)
+  lastAdviceCallDate DateTime?
+  lastProgressCallDate DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
