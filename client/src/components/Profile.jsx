@@ -29,37 +29,39 @@ export default function Profile() {
   });
   
   // Fetch karma statistics
-  useEffect(() => {
-    const fetchKarmaStats = async () => {
-      if (!user?.id) return;
-      
-      try {
-        setStatsLoading(true);
-        // In a real implementation, you would fetch from your backend API
-        // const data = await fetchGetWithAuth(`${process.env.REACT_APP_API_URL}/users/${user.id}/karma-stats`);
-        
-        // For now, use placeholder data based on the provided schema
-        const placeholderStats = {
-          categories: {
-            meditation: 5,
-            journaling: 3,
-            yoga: 2,
-            volunteering: 1,
-            donation: 0
-          },
-          totalPoints: 75
-        };
-        
-        setKarmaStats(placeholderStats);
-      } catch (err) {
-        console.error("Error fetching karma stats:", err);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
+useEffect(() => {
+  const fetchKarmaStats = async () => {
+    if (!user?.id) return;
     
-    fetchKarmaStats();
-  }, [user?.id]);
+    try {
+      setStatsLoading(true);
+      // Replace placeholder with actual API call
+      const data = await fetchGetWithAuth(
+        `${process.env.REACT_APP_API_URL}/users/${user.id}/karma-stats`
+      );
+      
+      setKarmaStats(data);
+    } catch (err) {
+      console.error("Error fetching karma stats:", err);
+      // Optionally set a default or error state
+      setKarmaStats({
+        categories: {
+          meditation: 0,
+          journaling: 0,
+          yoga: 0,
+          volunteering: 0,
+          donation: 0
+        },
+        totalPoints: 0,
+        postCount: 0
+      });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+  
+  fetchKarmaStats();
+}, [user?.id]);
   
   // Handle coaching setup
   const handleSetupSubmit = async (e) => {
@@ -234,6 +236,9 @@ export default function Profile() {
             <div className="karma-total">
               <h3>Total Karma Points</h3>
               <div className="karma-badge">{karmaStats.totalPoints}</div>
+            </div>
+            <div className="karma-post-count">
+              <p>Total Good Deeds: {karmaStats.postCount}</p>
             </div>
           </div>
         )}

@@ -606,3 +606,10 @@
     color: var(--text-secondary);
     margin-top: 1rem;
   }
+
+  .karma-post-count {
+    text-align: center;
+    margin-top: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
