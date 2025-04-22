@@ -25,7 +25,7 @@ export default function AppLayout() {
       <NavLink to="/app/posts" className={({ isActive }) => isActive ? "active-link" : ""}>My Posts</NavLink>
     </li>
     <li>
-      <NavLink to="/app/profile" className={({ isActive }) => isActive ? "active-link" : ""}>Profile</NavLink>
+      <NavLink to="/app/profile" className={({ isActive }) => isActive ? "active-link" : ""}>AI Coach and Profile</NavLink>
     </li>
     <li>
       <button
