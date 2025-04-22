@@ -6,7 +6,7 @@ GoodKarma is a social networking application designed to encourage positive habi
 
 ### User Authentication
 - Secure registration and login
-- JWT-based authentication
+- JWT-based authentication with HTTP-only cookies
 - Protected routes for authenticated users
 
 ### Social Feed
@@ -21,42 +21,119 @@ GoodKarma is a social networking application designed to encourage positive habi
 
 ### Social Interaction
 - Like/unlike posts
-- Comment on posts
-- Reply to comments
-- Nested comment threads
+- Comment on posts with threaded replies
+- Nested comment threads with full CRUD operations
 
 ### AI Life Coaching
-- Personalized guidance based on your activities
+- Personalized guidance based on your activity patterns
 - Set and track personal growth goals
-- Receive insights and recommendations
-- Track progress with achievements and setbacks
+- Receive AI-generated insights and recommendations
+- Monthly progress tracking with achievements and setbacks
 
 ### Profile
 - View personal information
-- Track karma statistics by category
-- Monitor total karma points
+- Track karma statistics by deed category
+- Monitor total karma points accumulated
 
 ## Technology Stack
 
 ### Backend
 - Node.js with Express
-- MySQL database with Prisma ORM
-- JWT for authentication
+- MySQL database (local development) / PostgreSQL (Render deployment)
+- JWT with HTTP-only cookies for authentication
 - RESTful API design
 
 ### Frontend
-- React.js 
+- React.js (v18)
 - React Router for navigation
 - Context API for state management
-- Custom hooks for data fetching
-- CSS for styling
+- Custom hooks for data fetching and state
+- CSS with responsive design
 
 ## Installation
 
 ### Prerequisites
 - Node.js (v14 or higher)
 - npm or yarn
-- MySQL database(local) and PostgreSQL (for production)
+- MySQL database (for local development)
+
+## Database Configuration Options
+
+### Option 1: Local Development with MySQL
+
+1. Create or update your `.env.local` file in the `api` directory:
+   ```
+   DATABASE_URL="mysql://username:password@localhost:3306/goodkarma"
+   JWT_SECRET="your-jwt-secret-key"
+   RAPID_API_KEY="your-rapid-api-key"
+   RAPID_API_HOST="ai-life-coach-api-personal-development-online-coaching.p.rapidapi.com"
+   ```
+
+2. Ensure your `schema.prisma` file is configured for MySQL:
+   ```prisma
+   datasource db {
+     provider = "mysql"
+     url      = env("DATABASE_URL")
+   }
+   ```
+
+3. Run migrations for your MySQL database:
+   ```bash
+   npx prisma migrate dev
+   ```
+
+4. To use this configuration, copy it to your active `.env` file:
+   ```bash
+   cp .env.local .env
+   ```
+
+### Option 2: Deployment with PostgreSQL on Render
+
+1. Create or update your `.env` file for Render deployment:
+   ```
+   DATABASE_URL="postgresql://postgres:password@postgres.render.com:5432/goodkarma"
+   JWT_SECRET="your-production-secret-key"
+   RAPID_API_KEY="your-rapid-api-key"
+   RAPID_API_HOST="ai-life-coach-api-personal-development-online-coaching.p.rapidapi.com"
+   PORT="10000"  # Render will set this automatically
+   ```
+
+2. Modify your `schema.prisma` file for PostgreSQL:
+   ```prisma
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+     relationMode = "prisma"
+   }
+   ```
+
+3. Update your `package.json` to include Render-specific scripts:
+   ```json
+   "scripts": {
+     "start": "node index.js",
+     "preinstall": "npm i -D prisma",
+     "postinstall": "npx prisma db push"
+   }
+   ```
+
+4. For local testing of the PostgreSQL setup, you can create a backup of your current environment:
+   ```bash
+   cp .env .env.current && cp .env.example .env
+   ```
+
+## Switching Between Environments
+
+To switch between MySQL (local) and PostgreSQL (Render):
+
+1. **For local MySQL development**:
+   - Make sure your `.env` file contains MySQL configuration: `cp .env.local .env`
+   - Ensure `schema.prisma` has `provider = "mysql"`
+   - Use `npx prisma migrate dev` for schema changes
+
+2. **For PostgreSQL Render preparation**:
+   - Update your `.env` file with PostgreSQL configuration
+   - Change `schema.prisma` to use `provider = "postgresql"`
+   - Use `npx prisma db push` instead of migrations
 
 ### Setting Up the Backend
 
@@ -72,17 +149,15 @@ GoodKarma is a social networking application designed to encourage positive habi
    npm install
    ```
 
-3. Create a `.env` file in the `api` directory with the following variables:
-   ```
-   DATABASE_URL="mysql://username:password@localhost:3306/goodkarma"
-   JWT_SECRET="your-secret-key"
-   REACT_APP_RAPID_API_KEY="your-rapid-api-key" # For the coaching service
-   REACT_APP_RAPID_API_HOST="ai-life-coach-api-personal-development-online-coaching.p.rapidapi.com"
-   ```
+3. Choose your database configuration option (MySQL or PostgreSQL) and set up the appropriate `.env` file.
 
-4. Run Prisma migrations:
+4. Run the database setup (migrations for MySQL, push for PostgreSQL):
    ```bash
+   # For MySQL
    npx prisma migrate dev
+   
+   # For PostgreSQL
+   npx prisma db push
    ```
 
 5. Start the backend server:
@@ -105,6 +180,8 @@ GoodKarma is a social networking application designed to encourage positive habi
 3. Create a `.env` file in the `client` directory:
    ```
    REACT_APP_API_URL="http://localhost:8000"
+   REACT_APP_RAPID_API_KEY="your-rapid-api-key"
+   REACT_APP_RAPID_API_HOST="ai-life-coach-api-personal-development-online-coaching.p.rapidapi.com"
    ```
 
 4. Start the frontend development server:
@@ -116,51 +193,27 @@ GoodKarma is a social networking application designed to encourage positive habi
 
 ## External API Integration
 
-GoodKarma integrates with the AI Life Coach API to provide personalized coaching features. This external API is used to generate tailored advice based on user profiles and track progress over time.
+GoodKarma integrates with the AI Life Coach API to provide personalized coaching features.
 
-### API Overview
+### API Features
 
-The Life Coach API provides two primary endpoints:
-- **getLifeAdvice**: Generates personalized coaching advice based on user profile and goals
-- **updateProgress**: Tracks user progress and provides updated recommendations
-
-The integration enables features like:
-- Personalized goal analysis
-- Strengths and areas for improvement identification 
-- Custom action plans
-- Progress tracking and assessment
-
-### Setup Requirements
-
-1. Sign up for an account at [RapidAPI](https://rapidapi.com/)
-2. Subscribe to the AI Life Coach API (Basic tier is free)
-3. Obtain your RapidAPI Key and Host information
-4. Configure environment variables:
-   - For client: REACT_APP_RAPID_API_KEY and REACT_APP_RAPID_API_HOST
-   - For server: RAPID_API_KEY and RAPID_API_HOST
-
-### Implementation Architecture
-
-The application uses a three-layer approach for API integration:
-
-1. **Service Layer**: Handles direct API communication with methods for all API interactions
-2. **Data Processing Layer**: Formats requests and processes responses, including utilities for data mapping and response parsing
-3. **UI Integration Layer**: React components and hooks for presenting coaching features to users
+- **Personalized Advice:** Generates tailored guidance based on user's activities
+- **Goal Analysis:** Helps identify and track personal growth goals
+- **Progress Tracking:** Monitors achievements and setbacks over time
+- **Action Planning:** Creates customized action plans based on user preferences
 
 ### API Quota Management
 
-To prevent exceeding API rate limits:
+To manage API usage limits:
 
 - Each user is limited to one coaching advice call per month
 - Each user is limited to one progress update call per month
 - API usage is tracked in the database with automatic monthly resets
-- Users receive clear notifications about their quota status
-
-For more details about the API endpoints and parameters, refer to the official [AI Life Coach API documentation](https://rapidapi.com/bilgisamapi-api2/api/ai-life-coach-api-personal-development-online-coaching).
+- Clear UI indicators show users their current quota status
 
 ## Running Tests
 
-GoodKarma uses Jest and React Testing Library for frontend testing. The test files are located in the `client/src/tests` directory.
+GoodKarma uses Jest and React Testing Library for frontend testing.
 
 ### Running Frontend Tests
 
@@ -174,111 +227,55 @@ GoodKarma uses Jest and React Testing Library for frontend testing. The test fil
    npm test
    ```
 
-3. Run tests with coverage:
-   ```bash
-   npm test -- --coverage
-   ```
-
-4. Run a specific test file:
-   ```bash
-   npm test -- AppLayout.test.jsx
-   ```
-
-5. Run tests in watch mode (automatically re-runs tests when files change):
-   ```bash
-   npm test -- --watch
-   ```
-
 ## Deployment
 
-### Deploying the Frontend to Vercel
+### Preparing for Deployment
 
-1. Create an account on [Vercel](https://vercel.com)
-
-2. Install the Vercel CLI:
-   ```bash
-   npm install -g vercel
+1. Update your API's index.js to use environment variables for PORT:
+   ```javascript
+   const PORT = parseInt(process.env.PORT) || 8000;
+   app.listen(PORT, () => {
+     console.log(`Server running on http://localhost:${PORT} 🎉 🚀`);
+   });
    ```
 
-3. Navigate to the client directory:
-   ```bash
-   cd client
-   ```
-
-4. Login to Vercel:
-   ```bash
-   vercel login
-   ```
-
-5. Deploy to Vercel:
-   ```bash
-   vercel
-   ```
-
-6. Configure environment variables in the Vercel dashboard:
-   - Go to your project settings
-   - Add the following environment variable:
-     - `REACT_APP_API_URL` (URL of your deployed backend)
-
-7. For production deployment:
-   ```bash
-   vercel --prod
-   ```
-
-### Deploying the Backend to Render
-
-1. Create an account on [Render](https://render.com)
-
-2. Create a new Web Service:
-   - Connect your GitHub repository
-   - Select the `api` directory as the root directory
-   - Set the build command: `npm install`
-   - Set the start command: `npm start`
-
-3. Configure environment variables:
-   - `DATABASE_URL` (MySQL connection string or use Render's PostgreSQL service)
-   - `JWT_SECRET` (Secure random string for JWT token generation)
-   - `REACT_APP_RAPID_API_KEY` (Your RapidAPI key)
-   - `REACT_APP_RAPID_API_HOST` (RapidAPI host for the coaching service)
-   - `PORT` (Default is 8000)
-
-4. Deploy the service
-
-5. For the database:
-   - Option 1: Use Render's PostgreSQL service (requires updating Prisma schema)
-   - Option 2: Use external MySQL hosting (PlanetScale, AWS RDS, etc.)
-
-6. Update the Prisma schema for production if needed:
+2. Update your Prisma schema for production database:
    ```prisma
+   generator client {
+     provider = "prisma-client-js"
+   }
+   
    datasource db {
-     provider = "postgresql" // Change if using PostgreSQL on Render
+     provider = "postgresql" // Change to postgresql for Render
      url      = env("DATABASE_URL")
+     relationMode = "prisma"
    }
    ```
 
-7. Run migrations on the production database:
-   ```bash
-   npx prisma migrate deploy
+3. Update package.json scripts in the API folder:
+   ```json
+   "scripts": {
+     "start": "node index.js",
+     "preinstall": "npm i -D prisma",
+     "postinstall": "npx prisma db push"
+   }
    ```
 
-### Deployed Application
+### Deploying to Render
 
-The GoodKarma application is now live:
+1. Create a PostgreSQL database on Render
+2. Create a Web Service on Render pointing to your repo
+3. Set the root directory to `api`
+4. Set build command: `npm install`
+5. Set start command: `npm start`
+6. Configure environment variables in Render dashboard using your `.env` values
 
-#### Frontend (Vercel)
-- URL: [https://goodkarma-client.vercel.app](https://goodkarma-client.vercel.app)
-- Repository: This repository's client directory
+### Deploying to Vercel
 
-#### Backend API (Render)
-- URL: [https://goodkarma-api.onrender.com](https://goodkarma-api.onrender.com)
-- Repository: This repository's api directory
-
-### Connecting to the Production API
-
-The frontend deployed on Vercel is configured to use the production API hosted on Render. This connection is managed through environment variables:
-
-```properties
-REACT_APP_API_URL=https://goodkarma-api.onrender.com
+1. Install Vercel CLI: `npm install -g vercel`
+2. Navigate to client directory: `cd client`
+3. Run: `vercel`
+4. Set environment variables in Vercel dashboard
 
 ## Project Structure
 
@@ -286,7 +283,10 @@ REACT_APP_API_URL=https://goodkarma-api.onrender.com
 ```
 api/
 ├── index.js                # Main Express server setup
-├── package.json
+├── package.json            # Dependencies and scripts
+├── .env                    # Active environment configuration
+├── .env.local              # Local MySQL configuration
+├── .env.example            # Example configuration template
 └── prisma/
     ├── migrations/         # Database migrations
     └── schema.prisma       # Database schema
@@ -328,17 +328,14 @@ client/
 - `GET /feed` - Get all posts (paginated)
 - `GET /feed/:id` - Get a specific post from feed
 
-### Comments
+### Social Interactions
+- `POST /posts/:id/like` - Like a post
+- `DELETE /posts/:id/like` - Unlike a post
+- `GET /posts/:id/likes` - Get like status and count
 - `GET /posts/:id/comments` - Get comments for a post
 - `POST /posts/:id/comments` - Add a comment to a post
 - `PUT /comments/:id` - Update a comment
 - `DELETE /comments/:id` - Delete a comment
-- `GET /posts/:id/comments/count` - Get comment count for a post
-
-### Likes
-- `POST /posts/:id/like` - Like a post
-- `DELETE /posts/:id/like` - Unlike a post
-- `GET /posts/:id/likes` - Get like status and count
 
 ### Coaching
 - `GET /users/:userId/coaching` - Get coaching data
@@ -381,7 +378,7 @@ client/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
 ## Contributing
 
@@ -389,11 +386,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Acknowledgements
 
-- Normalized CSS from [necolas/normalize.css](https://github.com/necolas/normalize.css)
+- [React](https://reactjs.org/) - Frontend library
+- [Express](https://expressjs.com/) - Backend framework
+- [Prisma](https://www.prisma.io/) - ORM for database access
+- [RapidAPI](https://rapidapi.com/) - For the AI Life Coach API
 - Icons for good deeds are provided by native emoji support
-
----
-
-Created with ❤️ by Krishna Choudhary
-
-**TL;DR –** GoodKarma is a social app that helps users track positive habits like meditation and volunteering, while providing AI coaching for personal growth.
